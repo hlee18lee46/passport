@@ -8,8 +8,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
       config={{
         loginMethods: ['wallet', 'email'],
-        embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
+        appearance: {
+          theme: 'light',
         },
       }}
     >
