@@ -11,6 +11,7 @@ export default function FileUpload() {
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("address", user.wallet.address) // 👈 Add this
 
     const res = await fetch("/api/upload", {
       method: "POST",

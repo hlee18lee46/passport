@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { usePrivy } from '@privy-io/react-auth'
 
 export default function UploadCard() {
+  const { user } = usePrivy()
+
   const [file, setFile] = useState<File | null>(null);
   const [uploadUrl, setUploadUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -13,6 +16,8 @@ export default function UploadCard() {
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("address", user.wallet.address) // 👈 Add this
+
     setLoading(true);
 
     const res = await fetch("/api/upload", {

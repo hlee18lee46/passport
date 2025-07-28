@@ -129,10 +129,7 @@ export default function HomePage() {
       </section>
 
       <section className="container mx-auto px-4 py-16">
-  <h2 className="text-3xl font-bold text-center mb-8">Try Uploading a Pass</h2>
-  <div className="max-w-xl mx-auto">
-    <UploadCard />
-  </div>
+
 </section>
 
       {/* CTA */}
