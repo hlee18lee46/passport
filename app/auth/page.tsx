@@ -16,17 +16,28 @@ export default function AuthPage() {
   const { ready, authenticated, login, logout, user } = usePrivy()
   const [uploads, setUploads] = useState<any[]>([])
 
-    useEffect(() => {
-    const fetchUploads = async () => {
-      if (user?.wallet?.address) {
-        const res = await fetch(`/api/my-uploads?address=${user.wallet.address}`)
-        const data = await res.json()
-        if (data.uploads) setUploads(data.uploads)
+useEffect(() => {
+  const fetchUploads = async () => {
+    if (user?.wallet?.address) {
+      try {
+        const res = await fetch(`/api/my-uploads?address=${user.wallet.address}`) // ✅ correct
+
+        if (!res.ok) {
+          console.error("Failed to fetch uploads:", res.status);
+          return;
+        }
+
+        const data = await res.json();
+        if (data.uploads) setUploads(data.uploads);
+      } catch (err) {
+        console.error("Error parsing uploads response:", err);
       }
     }
+  };
 
-    fetchUploads()
-  }, [user?.wallet?.address])
+  fetchUploads();
+}, [user?.wallet?.address]);
+
 
   return (
     <>
@@ -60,28 +71,10 @@ export default function AuthPage() {
   <div className="max-w-xl mx-auto">
     <UploadCard />
   </div>
-    {/* Display Uploaded Passes */}
-  <h2 className="text-2xl font-semibold text-center mt-12">Your Uploaded Passes</h2>
-  <div className="grid gap-4 mt-4 max-w-2xl">
-    {uploads.length === 0 ? (
-      <p className="text-center text-gray-500">No passes uploaded yet.</p>
-    ) : (
-      uploads.map((upload, i) => (
-        <div key={i} className="border rounded-lg p-4 shadow bg-white">
-          <p className="font-medium">File: {upload.filename}</p>
-          <a
-            href={upload.ipfsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline text-sm"
-          >
-            View Pass
-          </a>
-          <p className="text-xs text-gray-400">Uploaded on: {new Date(upload.createdAt).toLocaleString()}</p>
-        </div>
-      ))
-    )}
-  </div>
+
+<Link href="/passes">
+  <Button className="mt-4">Show My Passes</Button>
+</Link>
 
           </>
         )}

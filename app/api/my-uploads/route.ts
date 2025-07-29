@@ -11,16 +11,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const client = await clientPromise
-    const db = client.db("passport"); // ← explicitly use the right DB
-await db.collection("ticket").insertOne({
-  address,
-  filename: file.name,
-  ipfsUrl: result.url,
-  uploadId: result.id,
-  createdAt: new Date(),
-});
+    const db = client.db("passport")
 
-    const uploads = await db.collection("passport.ticket")
+    const uploads = await db
+      .collection("ticket")
       .find({ address })
       .sort({ createdAt: -1 })
       .toArray()

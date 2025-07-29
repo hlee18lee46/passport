@@ -4,12 +4,12 @@ import { writeFile } from "fs/promises";
 import path from "path";
 import { tmpdir } from "os";
 import { randomUUID } from "crypto";
-import clientPromise from "@/lib/mongodb"; // <- make sure you have this
+import clientPromise from "@/lib/mongodb";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const file = formData.get("file") as File;
-  const address = formData.get("address") as string; // <-- Get user wallet address
+  const address = formData.get("address") as string;
 
   if (!file || !address) {
     return NextResponse.json({ error: "Missing file or address" }, { status: 400 });
@@ -23,46 +23,45 @@ export async function POST(req: NextRequest) {
   try {
     const tusky = await Tusky.init({ apiKey: process.env.TUSKY_API_KEY! });
     const vaultId = process.env.TUSKY_VAULT_ID!;
+
+    // Upload the file to Tusky
     const result = await tusky.file.upload(vaultId, filePath, { encrypted: false });
+    const uploadId = result.id;
 
-    // Store in MongoDB
-// Store in MongoDB
-try {
-  console.log("📥 Upload successful. Saving to MongoDB:", {
-    address,
-    filename: file.name,
-    ipfsUrl: result.url,
-    uploadId: result.id,
-  });
+    // List files in the vault to find the one we just uploaded
+    const files = await tusky.file.list({ vaultId });
+    const uploadedFile = files.items.find((f) => f.uploadId === uploadId);
 
-  const client = await clientPromise;
-  const db = client.db("passport"); // ← explicitly use the right DB
-await db.collection("ticket").insertOne({
-  address,
-  filename: file.name,
-  ipfsUrl: result.url,
-  uploadId: result.id,
-  createdAt: new Date(),
-});
+    if (!uploadedFile || !uploadedFile.blobId) {
+      throw new Error("Uploaded file not found or missing blobId");
+    }
 
+    const blobId = uploadedFile.blobId;
+    const ipfsUrl = `https://walrus.ai/ipfs/${blobId}`;
 
-  const insertResult = await db.collection("passport.ticket").insertOne({
-    address,
-    filename: file.name,
-    ipfsUrl: result.url,
-    uploadId: result.id,
-    createdAt: new Date(),
-  });
+    console.log("📥 Upload successful. Saving to MongoDB:", {
+      address,
+      filename: file.name,
+      ipfsUrl,
+      uploadId,
+    });
 
-  console.log("✅ MongoDB insert result:", insertResult);
-} catch (mongoErr) {
-  console.error("❌ MongoDB insert error:", mongoErr);
-}
+    const client = await clientPromise;
+    const db = client.db("passport");
 
+    const insertResult = await db.collection("ticket").insertOne({
+      address,
+      filename: file.name,
+      ipfsUrl,
+      uploadId,
+      createdAt: new Date(),
+    });
 
-    return NextResponse.json({ uploadId: result.id, url: result.url }, { status: 200 });
+    console.log("✅ MongoDB insert result:", insertResult);
+
+    return NextResponse.json({ uploadId, url: ipfsUrl }, { status: 200 });
   } catch (err: any) {
-    console.error("Tusky upload error:", err);
+    console.error("❌ Upload or DB error:", err);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 }
